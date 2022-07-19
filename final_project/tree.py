@@ -1,24 +1,79 @@
+from attr import attributes
+
+
 class Node:
-    def __init__(self, data, left = None, right = None, parent = None):
-        self.left = left
-        self.right = right
+    '''
+    class Node innitialises a tree structure for a non-binary tree
+    it has the typical setter and getter methods and a method to remove a 
+    child from the list of children
+    '''
+    def __init__(self, children = [], parent = None, attribute = "", classification = "", value = ""):
+        self.children = children
         self.parent = parent
-        self.data = data
+        self.attribute = attribute
+        self.classification = classification
+        self.value = value
 
-    def setLeft(self, Node):
-        if (self.left is not None):        
-            self.left.parent = None
-        self.left = Node
+    def setChild(self, node):
+        self.children.append(node)
         
-    def setRight(self, Node):
-        if (self.right is not None):
-            self.right.parent = None
-        self.right = Node
-
-    def setParent(self, Node):
+    def setParent(self, node):
         if (self.parent is not None):
-            if (Node == self.parent.left):
-                self.parent.left = None
-            else:
-                self.parent.right = None
-        self.parent = Node
+            self.parent.children.remove(self)
+        self.parent = node
+
+    def getChildren(self):
+        return self.children
+    
+    def getParent(self):
+        return self.parent
+    
+    def deleteChild(self, node):
+        if (node in self.children):
+            node.parent = None
+            self.children.remove(node)
+        else:
+            raise TypeError("Child not in Children")
+        
+    def isLeaf(self):
+        if (not self.children):
+            return True
+        else:
+            return False
+
+    def isRoot(self):
+        if (self.parent is None):
+            return True
+        else:
+            return False
+    
+    def setAttribute(self, attribute):
+        self.attribute = attribute
+    
+    def getAttribute(self):
+        return self.attribute
+    
+    def setClassification(self, classification):
+        self.classification = classification
+    
+    def getClassification(self):
+        return self.classification
+    
+    def setValue(self,value):
+        self.value = value
+
+    def getValue(self):
+        return self.value
+    
+
+    def printTree(self, level = 0):
+        tab = "    "
+        if self.isLeaf() is True:
+            print(f"{tab*level}classification: {self.classification}")
+            return
+
+        print(f"{tab*level}{self.attribute}: {self.value}")
+        level = level + 1
+        for child in self.children:
+            
+            child.printTree(level)
