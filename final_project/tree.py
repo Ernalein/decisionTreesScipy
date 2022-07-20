@@ -7,7 +7,7 @@ class Node:
     it has the typical setter and getter methods and a method to remove a 
     child from the list of children
     '''
-    def __init__(self, children = [], parent = None, attribute = "", classification = "", value = ""):
+    def __init__(self, children = [], parent = None, attribute = None, classification = None, value = None):
         self.children = children
         self.parent = parent
         self.attribute = attribute
