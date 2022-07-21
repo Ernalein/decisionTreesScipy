@@ -1,6 +1,3 @@
-from attr import attributes
-
-
 class Node:
     '''
     class Node innitialises a tree structure for a non-binary tree
@@ -75,5 +72,4 @@ class Node:
         print(f"{tab*level}{self.attribute}: {self.value}")
         level = level + 1
         for child in self.children:
-            
             child.printTree(level)

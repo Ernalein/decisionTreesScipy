@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 # this is the prepare_data file
 # get chunks for training and testing
@@ -37,10 +36,10 @@ def prepare_data(data:pd.DataFrame, tratio = 0.1, validation = False):
             validationData.append(doubleData.iloc[chunkSize*(chunk+1): chunkSize*(chunk+2), :])
             trainingData.append(doubleData.iloc[chunkSize*(chunk+2): chunkSize*(nr_chunks+chunk), :])
         
-        return testData, trainingData, validationData
+        return [testData, trainingData, validationData]
     else:
         for chunk in range(nr_chunks-1):
             testData.append(doubleData.iloc[chunk: chunkSize*(chunk+1), :])
             trainingData.append(doubleData.iloc[chunkSize*(chunk+1): chunkSize*(nr_chunks+chunk), :])
         
-        return trainingData, testData
+        return [testData, trainingData]
