@@ -14,37 +14,53 @@ class test_data:
 
 
     def calcError(self, datapoint):
-        # accepts only pd series as datapoint --------------------------------------not sure if this makes sense
-        if not isinstance(datapoint, pd.Series):
-            raise TypeError("Datapoint has to be of type pd.Series")
-        # returns an error array
-        error = False
 
-        if self.node.isLeaf():
-            classification = self.node.getClassification()
-            if classification is not self.target:
-                error = True
-           
-            
+        # compare leaf node classification and datapoint classification (basecase)
+        if self.node.isLeaf() == False:
+            return self.node.getClassification() == datapoint[self.target]
+
+        # traverse down the tree with the decision nodes (recursive case)
         else:
-
             attribute = self.node.getAttribute()
-            value = datapoint[attribute]
+            dataValue = datapoint[attribute]
             for child in self.node.children:
-                targetValue = child.getValue()
-                if targetValue is value:
-                    self.node = child
-                    test_data(datapoint, self.target, child).calcError()
+                if child.getValue() is dataValue:
+                    return test_data(datapoint, self.target, child).calcError()
+        
+        # if there are no children with the right value at decision node, use current classification (base case)
+        return self.node.getClassification() == self.target
 
-        return error
     
+    def calcClassification(self, datapoint):
+        
+        # get leaf node classification (basecase)
+        if self.node.isLeaf() == False:
+            return self.node.getClassification()
+
+        # traverse down the tree with the decision nodes (recursive case)
+        else:
+            attribute = self.node.getAttribute()
+            dataValue = datapoint[attribute]
+            for child in self.node.children:
+                if child.getValue() is dataValue:
+                    return test_data(datapoint, self.target, child).calcClassification()
+        
+        # if there are no children with the right value at decision node, get current classification (base case)
+        return self.node.getClassification()
+        
     def classify(self):
+        classificationArray = []
+        for i in range(self.testData.shape[0]):
+            datapoint = self.testData.loc[i]
+            classificationArray.append(self.calcClassification(datapoint))
+        
+        return classificationArray
+    
+    def accuracy(self):
         errorArray = []
         for i in range(self.testData.shape[0]):
             datapoint = self.testData.loc[i]
             errorArray.append(self.calcError(datapoint))
         
-        return errorArray
-    
-    
+        return np.mean(errorArray)
 
