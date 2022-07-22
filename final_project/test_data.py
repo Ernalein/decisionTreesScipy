@@ -2,6 +2,7 @@ import pandas as pd
 from tree import Node
 
 class test_data:
+    
     def __init__(self, testData, target, node:Node):
         self.testData = testData
         self.target = target
@@ -13,9 +14,9 @@ class test_data:
 
 
     def calcError(self, datapoint):
-        # accepts only pd series as datapoint
+        # accepts only pd series as datapoint --------------------------------------not sure if this makes sense
         if not isinstance(datapoint, pd.Series):
-            raise TypeError("Datapoint has to be of type ps.Series")
+            raise TypeError("Datapoint has to be of type pd.Series")
         # returns an error array
         error = False
 

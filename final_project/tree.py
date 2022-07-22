@@ -4,12 +4,14 @@ class Node:
     it has the typical setter and getter methods and a method to remove a 
     child from the list of children
     '''
-    def __init__(self, children = [], parent = None, attribute = None, classification = None, value = None):
-        self.children = children
+    def __init__(self, parent = None, attribute = None, classification = None, value = None, target = None):
+        self.children = []  
         self.parent = parent
         self.attribute = attribute
         self.classification = classification
         self.value = value
+        self.target = target
+        
 
     def setChild(self, node):
         self.children.append(node)
@@ -33,10 +35,10 @@ class Node:
             raise TypeError("Child not in Children")
         
     def isLeaf(self):
-        if (not self.children):
-            return True
-        else:
+        if len(self.children) > 0:
             return False
+        else:
+            return True
 
     def isRoot(self):
         if (self.parent is None):
@@ -65,11 +67,9 @@ class Node:
 
     def printTree(self, level = 0):
         tab = "    "
-        if self.isLeaf() is True:
-            print(f"{tab*level}classification: {self.classification}")
-            return
-
-        print(f"{tab*level}{self.attribute}: {self.value}")
-        level = level + 1
-        for child in self.children:
-            child.printTree(level)
+        if self.isLeaf():
+            print(tab*level, "classification: ", self.target, " = " , self.classification)
+        else:
+            for child in self.children:
+                print(tab*level, self.attribute, ": ", child.value)
+                child.printTree(level + 1)
