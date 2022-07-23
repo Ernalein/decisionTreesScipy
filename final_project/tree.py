@@ -4,12 +4,13 @@ class Node:
     it has the typical setter and getter methods and a method to remove a 
     child from the list of children
     '''
-    def __init__(self, parent = None, attribute = None, classification = None, value = None, target = None):
+    def __init__(self, parent = None, attribute = None, classification = None, value = None, valueIsContinuous = False, target = None):
         self.children = []  
         self.parent = parent
         self.attribute = attribute
         self.classification = classification
         self.value = value
+        self.valueIsContinuous = valueIsContinuous
         self.target = target
         
 
@@ -71,5 +72,21 @@ class Node:
             print(tab*level, "classification: ", self.target, " = " , self.classification)
         else:
             for child in self.children:
-                print(tab*level, self.attribute, ": ", child.value)
+                
+                # printing intervals
+                if child.valueIsContinuous:
+                    interval = ""
+                    if child.value[0] == np.NINF:
+                        interval = f"smaller then {child.value[1]}"
+                    elif child.value[1] == np.PINF:
+                        interval = f"bigger then {child.value[0]}"
+                    else:
+                        interval = f"between {child.value[0]} and {child.value[1]}"
+                    print(tab*level, self.attribute, ": ", interval)
+                
+                # printing discrete values
+                else:
+                    print(tab*level, self.attribute, ": ", child.value)
+                
+                # traverse deeper into the tree
                 child.printTree(level + 1)

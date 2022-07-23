@@ -24,6 +24,11 @@ class test_data:
             attribute = self.node.getAttribute()
             dataValue = datapoint[attribute]
             for child in self.node.children:
+                # for interval values
+                if child.valueIsContinuous:
+                    if dataValue >= child.getValue()[0] and dataValue < child.getValue()[1]:
+                        return test_data(datapoint, self.target, child).calcError()
+                # for discrete values
                 if child.getValue() is dataValue:
                     return test_data(datapoint, self.target, child).calcError()
         
@@ -42,6 +47,11 @@ class test_data:
             attribute = self.node.getAttribute()
             dataValue = datapoint[attribute]
             for child in self.node.children:
+                # for interval values
+                if child.valueIsContinuous:
+                    if dataValue >= child.getValue()[0] and dataValue < child.getValue()[1]:
+                        return test_data(datapoint, self.target, child).calcClassification()
+                # for discrete values
                 if child.getValue() is dataValue:
                     return test_data(datapoint, self.target, child).calcClassification()
         

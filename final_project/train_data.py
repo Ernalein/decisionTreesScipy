@@ -32,55 +32,112 @@ class train_data:
         self.recursion_depth = recursion_depth
         self.max_recursion = max_recursion
     
+    ######################################
+    ## methods for continuous variables ##
+    ######################################
+    
     def is_continuous(self, values):
         # checks is variable is a continuous variable
+        # (it is continuous if it has more than 10 different values and is a numericla scalar)
         if len(values) > 10:
-            for value in values:
-                if value is not int or float:
-                    return False
-            return True
-        else:
-            return False
+            if isinstance(list(values)[5], int) or isinstance(list(values)[5], float):
+                return True
+        return False
 
-    def attribute_continuous(self, attributeColumn, values):
+    
+    def getBoundaries(self, tColumn, aColumn):
+        # by looking at the target column and the attribute column the
+        # function decides on deciosion boundaries in a continuous varibale, where classification changes
+        # aColumn -> attribute column with the continuous values
+        # tColumn -> target column with the classification
         
-        # sort the set
-        values = list(sorted(values))
-        split_lenght = int(len(values) * self.continuous_splitting)
-        maxGain = 0
-        maxValue = 0
-        for split in range(split_lenght):
-            value = values[split]
+        # 1) sort the two columns
+        columns = pd.DataFrame(data={"a":list(aColumn), "t":list(tColumn)}).sort_values(by="a")
+        columns.index = range(len(columns))
 
-            subsetData1 = self.data[attributeColumn <= value]
-            subsetData2 = self.data[attributeColumn > value]
-            subset1 = train_data(subsetData1, self.target, self.attributes)
-            subset2 = train_data(subsetData2, self.target, self.attributes)
+        # 2) find decision boundaries where classification changes
+        leftBound = np.NINF
+        rightBound = None
+        boundaries = []
+        currentClass = columns["t"][0]
+        for i in range(len(columns)):
+            # when classification changes
+            if(columns["t"][i] != currentClass):
+                currentClass = columns["t"][i]
+                
+                # get the value in the middel
+                beforeSwitch = columns["a"][i-1]
+                afterSwitch = columns["a"][i]
+                rightBound = (beforeSwitch + afterSwitch) / 2
 
-            gainSum =  (subsetData1.shape[0] / self.data.shape[0]) * subset1.entropy() + (subsetData2.shape[0] / self.data.shape[0]) * subset2.entropy()
-            infoGain = self.data.entropy() - gainSum
-
-            if infoGain > maxGain:
-                maxGain = infoGain
-                maxValue = value
+                # safe the tupple of two boundaries with a uniform classification
+                boundaries.append((leftBound, rightBound))
+                leftBound = rightBound
         
-        return [maxGain, maxValue]
-
+        # last tupple that does not get triggerd by a switch of classification
+        boundaries.append((leftBound, np.PINF))
+        
+        # if the getBoundaries function returns more then 10 intervals
+        # set intervals indipendent of classification
+        if len(boundaries) > 10:
+            return self.setBoundaries(aColumn)
+        
+        return boundaries
+    
+    def setBoundaries(self, aColumn):
+        # if the getBoundaries function returns more then 10 intervals
+        # sets intervals indipendent of classification
+        
+        # calculate size of intervals
+        maximum = np.max(aColumn)
+        minimum = np.min(aColumn)
+        stepsize = (maximum - minimum)/ 10
+        boundaries = []
+        
+        # make a tupel for each interval
+        leftBound = np.NINF
+        rightBound = minimum + stepsize
+        for i in range(9):
+            boundaries.append((leftBound, rightBound))
+            leftBound = rightBound
+            rightBound = leftBound + stepsize
+        boundaries.append((leftBound, np.PINF))
+        
+        return boundaries
+        
+    
+    def replaceContinuous(self, boundaries, aColumn):
+        # replaces the continuous values of an attribute by the
+        # tuples that represent an interval
+        
+        newAColumn = []
+        for value in aColumn:
+            for l, r in boundaries:
+                if value >= l and value < r:
+                    newAColumn.append((l, r))
+        return newAColumn
+    
+    
+    #######################################
+    ## methods for choosing an attribute ##
+    #######################################
+    
+    
     def entropy(self):
+        # calculates entropy 
         targetColumn = self.data.loc[:, self.target]
 
         values = set(targetColumn)
         entropySum = 0
         for value in values:
-            # p = targetColumn.count(value) / len(targetColumn)
-            valueColumn = self.data[targetColumn == value].loc[:, self.target]
-            p = len(valueColumn)/ len(targetColumn)
+            p = list(targetColumn).count(value) / len(targetColumn)
             entropySum = entropySum + (- p * np.log(p))
 
         return entropySum
     
 
     def informationGain(self, attributeColumn, values):
+        # calculates the informationGain
         gainSum = 0
         
         for value in values:
@@ -95,22 +152,55 @@ class train_data:
 
         return infoGain
 
+    def gainRatio(self, attributeColumn, values):
+        # calculating the Gain Ratio instead of the InforamtionGain
+        # to prefer attributes with few values
+        
+        infoGain = self.informationGain(attributeColumn, values)
+
+        splitInfo = 0
+        for value in values:
+            subset = attributeColumn[attributeColumn == value]
+            # proportion of subset size and whole set size
+            s = len(subset) / len(attributeColumn)
+            print("size proportion:", s)
+            print("for value ", value ," in ", attributeColumn)
+            splitInfo = splitInfo + (- s * np.log(s))
+            
+        
+        if splitInfo == 0:
+            splitInfo = infoGain
+            
+        return infoGain / splitInfo
+        
 
     def chooseAttribute(self):
+        # chooses an attribute that maximises GainRatio
+        
         maxGain= 0
         maxAttribute = ""
 
-        # calculate Information Gain for each attribute
+        # calculate Gain Ratio for each attribute
         for attribute in self.attributes:
+            
+            print("--------------------------------------------------------------------------")
             attributeColumn = self.data.loc[:, attribute]
             values = set(attributeColumn)
             gain = 0
 
-            # calculate Information gain for this attribute
+            # replace the values in attributeColumn with continuous values by Intervals
+            print(f"{attribute} is continuous and has {len(values)} values: {self.is_continuous(values)}")
             if self.is_continuous(values):
-                gain = self.attribute_continuous(attributeColumn, values)[0] # calculates the split information ???
-            else:
-                gain = self.informationGain(attributeColumn, values)
+                targetColumn = self.data[self.target]
+                boundaries = self.getBoundaries(targetColumn, attributeColumn)
+                attributeColumn = self.replaceContinuous(boundaries, attributeColumn)
+                values = set(attributeColumn)
+                print("")
+                print(f"replaced values of {attribute} by intervals: \n{values}")
+                print("")                
+                
+            # calculate gainRatio
+            gain = self.gainRatio(attributeColumn, values)
 
             # store attribute with highest information gain
             if gain >= maxGain:
@@ -120,27 +210,24 @@ class train_data:
         # choose attribute with highest Information Gain
         return maxAttribute
 
+    ############################################
+    ## methods for building the decision tree ##
+    ############################################
+    
     def classify(self):
         # returns the most commen classification of the dataset
         
         targetColumn = self.data.loc[:, self.target]
         values = set(targetColumn)
-        maxClass = 0
-        classification = ""
+        maxClass = 0  # highest number of values
+        classification = "" # classification of most common value
         for value in values:
-            
-            # if targetColumn.count(value) > maxClass:
-            valueColumn = self.data[targetColumn == value].loc[:, self.target]
-            if len(valueColumn) > maxClass:
-                maxClass = len(valueColumn)
+            # check if calssification value is more common then other classification values
+            if list(targetColumn).count(value) > maxClass:
+                maxClass = list(targetColumn).count(value)
                 classification = value
 
         return classification
-
-
-    def remove_attribute(self, attribute):
-        self.attributes.remove(attribute)
-        return self.attributes
 
     def id3(self):
         # base cases:
@@ -178,38 +265,32 @@ class train_data:
         # split data according to attribute
         attributeColumn = self.data.loc[:, attribute]
         values = set(attributeColumn)
-        new_attributes = self.remove_attribute(attribute)
+        new_attributes = self.attributes
+        new_attributes.remove(attribute)
         recursion_depth = self.recursion_depth + 1
 
+        valueIsContinuous=False
+        
         # chosen attribute is a continuous variable:
         if self.is_continuous(values):
             print("continuous")
-            value = self.attribute_continuous(attributeColumn, values)[1]
-
-            subsetData1 = self.data[attributeColumn <= value]
-            subsetData2 = self.data[attributeColumn > value]
-            childNode1 = Node(parent=self.node, value=f"<= {value}")
-            childNode2 = Node(parent=self.node, value=f"> {value}")
-            self.node.setChild(childNode1)
-            self.node.setChild(childNode2)
             
-            subset1 = train_data(data=subsetData1, target=self.target, attributes=new_attributes, node=childNode1, recursion_depth=recursion_depth)
-            subset2 = train_data(data=subsetData2, target=self.target, attributes=new_attributes, node=childNode2, recursion_depth=recursion_depth)
-            # recursive call on all partitions
-            subset1.id3()
-            subset2.id3()
+            targetColumn = self.data[self.target]
+            boundaries = self.getBoundaries(targetColumn, attributeColumn)
+            attributeColumn = self.replaceContinuous(boundaries, attributeColumn)
+            values = set(attributeColumn)
+            valueIsContinuous=True
         
-        # chosen attribute is a categorical variable:
-        else:
-            print("not continuous")
-            for value in values:
-                subsetData = self.data[attributeColumn == value]
-                childNode = Node(parent=self.node, value=value, target=self.target)
-                self.node.setChild(childNode)
-                subset = train_data(data=subsetData, target=self.target, attributes=new_attributes, node=childNode, recursion_depth=recursion_depth)
-    
-                # recursive call on all partitions
-                subset.id3()
+        # create leaf node for each attribute value
+        for value in values:
+            subsetData = self.data[attributeColumn == value]
+            childNode = Node(parent=self.node, value=value, valueIsContinuous=valueIsContinuous, target=self.target)
+            self.node.setChild(childNode)
+            subset = train_data(data=subsetData, target=self.target, attributes=new_attributes, node=childNode, recursion_depth=recursion_depth)
+
+            # recursive call on all partitions
+            subset.id3()
+            
 
     def retrain(self, data):
         self.data = data
