@@ -2,7 +2,7 @@
 import numpy as np
 import pandas as pd
 from tree import Node
-
+ 
 class split_data:
     def __init__(self, data, target, attributes, node = Node):
         self.data = data

@@ -1,17 +1,19 @@
+import numpy as np
 class Node:
     '''
     class Node innitialises a tree structure for a non-binary tree
     it has the typical setter and getter methods and a method to remove a 
     child from the list of children
     '''
-    def __init__(self, parent = None, attribute = None, classification = None, value = None, valueIsContinuous = False, target = None):
-        self.children = []  
+    def __init__(self, root = False, parent = None, children = [], attribute = None, classification = None, value = None, valueIsContinuous = False, target = None):
+        self.children = children  
         self.parent = parent
         self.attribute = attribute
         self.classification = classification
         self.value = value
         self.valueIsContinuous = valueIsContinuous
         self.target = target
+        self.root = root
         
 
     def setChild(self, node):
@@ -36,13 +38,13 @@ class Node:
             raise TypeError("Child not in Children")
         
     def isLeaf(self):
-        if len(self.children) > 0:
+        if len(self.children) > 0 and not self.root:
             return False
         else:
             return True
 
     def isRoot(self):
-        if (self.parent is None):
+        if self.root:
             return True
         else:
             return False
