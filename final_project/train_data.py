@@ -47,34 +47,37 @@ class train_data:
     
     def getBoundaries(self, tColumn, aColumn):
         # by looking at the target column and the attribute column the
-        # function decides on deciosion boundaries in a continuous varibale, where classification changes
+        # function decides on decision boundaries in a continuous varibale, where classification changes
         # aColumn -> attribute column with the continuous values
         # tColumn -> target column with the classification
         
-        # 1) sort the two columns
+        # 1) sort the two columns by attribute values
         columns = pd.DataFrame(data={"a":list(aColumn), "t":list(tColumn)}).sort_values(by="a")
         columns.index = range(len(columns))
 
         # 2) find decision boundaries where classification changes
-        leftBound = np.NINF
+        leftBound = np.NINF # first interval has negative infinity as left boundary
         rightBound = None
         boundaries = []
         currentClass = columns["t"][0]
+        
         for i in range(len(columns)):
+            
             # when classification changes
             if(columns["t"][i] != currentClass):
                 currentClass = columns["t"][i]
                 
-                # get the value in the middel
+                # get the value in the middel of the values where classification changes
                 beforeSwitch = columns["a"][i-1]
                 afterSwitch = columns["a"][i]
                 rightBound = (beforeSwitch + afterSwitch) / 2
 
-                # safe the tupple of two boundaries with a uniform classification
+                # safe the tupple of two boundaries 
+                # represents an interval with a uniform classification
                 boundaries.append((leftBound, rightBound))
                 leftBound = rightBound
         
-        # last tupple that does not get triggerd by a switch of classification
+        # last interval has negative infinity as right boundary
         boundaries.append((leftBound, np.PINF))
         
         # if the getBoundaries function returns more then 10 intervals
@@ -86,7 +89,7 @@ class train_data:
     
     def setBoundaries(self, aColumn):
         # if the getBoundaries function returns more then 10 intervals
-        # sets intervals indipendent of classification
+        # sets 10 eaqually sized intervals indipendent of classification
         
         # calculate size of intervals
         maximum = np.max(aColumn)
@@ -138,11 +141,12 @@ class train_data:
 
     def informationGain(self, attributeColumn, values):
         # calculates the informationGain
-        gainSum = 0
         
+        gainSum = 0
         for value in values:
             
-            subsetData = self.data[attributeColumn == value]
+            mask = lambda aColumn, value :(row == value for row in aColumn) 
+            subsetData = self.data.iloc[mask(attributeColumn, value),:]
             subset = train_data(subsetData, self.target, self.attributes)
             # claculate entropy and normalize by size of subsets
             gainSum = gainSum + (subsetData.shape[0] / self.data.shape[0]) * subset.entropy()
@@ -158,18 +162,20 @@ class train_data:
         
         infoGain = self.informationGain(attributeColumn, values)
 
-        splitInfo = 0
+        splitInfo = 0.0
         for value in values:
+            
             subset = attributeColumn[attributeColumn == value]
             # proportion of subset size and whole set size
             s = len(subset) / len(attributeColumn)
-            print("size proportion:", s)
-            print("for value ", value ," in ", attributeColumn)
-            splitInfo = splitInfo + (- s * np.log(s))
-            
+            if s != 0.0:
+                splitInfo = splitInfo + ((- s) * np.log(s))
         
+        # to avoid dividing by zero
         if splitInfo == 0:
             splitInfo = infoGain
+            if infoGain == 0:
+                return 0
             
         return infoGain / splitInfo
         
@@ -183,21 +189,16 @@ class train_data:
         # calculate Gain Ratio for each attribute
         for attribute in self.attributes:
             
-            print("--------------------------------------------------------------------------")
             attributeColumn = self.data.loc[:, attribute]
             values = set(attributeColumn)
             gain = 0
 
             # replace the values in attributeColumn with continuous values by Intervals
-            print(f"{attribute} is continuous and has {len(values)} values: {self.is_continuous(values)}")
             if self.is_continuous(values):
                 targetColumn = self.data[self.target]
                 boundaries = self.getBoundaries(targetColumn, attributeColumn)
                 attributeColumn = self.replaceContinuous(boundaries, attributeColumn)
-                values = set(attributeColumn)
-                print("")
-                print(f"replaced values of {attribute} by intervals: \n{values}")
-                print("")                
+                values = set(attributeColumn)            
                 
             # calculate gainRatio
             gain = self.gainRatio(attributeColumn, values)
@@ -283,13 +284,15 @@ class train_data:
         
         # create leaf node for each attribute value
         for value in values:
-            subsetData = self.data[attributeColumn == value]
+            # get the subset determined by the attribute value
+            mask = lambda aColumn, value :(row == value for row in aColumn) 
+            subsetData = self.data.iloc[mask(attributeColumn, value),:]
+            # create a node in the tree
             childNode = Node(parent=self.node, value=value, valueIsContinuous=valueIsContinuous, target=self.target)
             self.node.setChild(childNode)
+            # train the node with the data subset
             subset = train_data(data=subsetData, target=self.target, attributes=new_attributes, node=childNode, recursion_depth=recursion_depth)
-
-            # recursive call on all partitions
-            subset.id3()
+            subset.id3() # recursive call on all partitions
             
 
     def retrain(self, data):
