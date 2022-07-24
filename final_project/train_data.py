@@ -176,7 +176,7 @@ class train_data:
 
     def chooseAttribute(self):
         # chooses an attribute that maximises GainRatio
-        
+        #   
         maxGain= 0
         maxAttribute = ""
 
@@ -235,11 +235,13 @@ class train_data:
         if (self.data[self.target].nunique() == 1):
             self.node.setClassification(self.data[self.target].iloc[0])
             print("basecase1")
+            print("classification: ", self.data[self.target].iloc[0])
             return 
         # 2) out of discriptive features -> leaf node with majority of target values
         if (not self.attributes):
             self.node.setClassification(self.classify())
             print("basecase2")
+            print("classification: ", self.classify())
             return
         # 3) no instances left in dataset -> take majority of parent node
         if (self.data is None):
