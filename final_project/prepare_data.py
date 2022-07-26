@@ -1,6 +1,4 @@
 import pandas as pd
-# this is the prepare_data file
-# get chunks for training and testing
 
 def prepare_data(data:pd.DataFrame, tratio = 0.1):
     

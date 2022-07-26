@@ -4,12 +4,31 @@ from tree import Node
 
 class train_data:
     '''
-    class train_data has all important functions for ID3 Algorithm:
-    it can calculate the entropy of some data, the information gain, choose an attriute.
-    within the ID3 algorithm a tree will be trained.
-    the function retrain(data) retrains a trained tree with new data.
+    The class train_data has all important functions for the ID3 Algorithm with continous 
+    and discrete variables:
+
+    The functions isContinous(), getBoundaries(), setBoundaries() and replaceContinous()
+    detect when an attribute column consists of continous values. The markers we choose for this
+    detection are more than 10 different numerical values. 
+    They choose the boundary tuples according to the classification. When this returns more than 
+    10 differnet values they set 10 evenly spread boundaries.
+    With replaceContinous() the values is the continous attribute column are then replaced with 
+    the boundary tuple in which they lie inbetween. 
+    The fuction sortIntervals() sorts the resulting intervals.
+
+    The functions entropy(), informationGain(), gainRatio() and chooseAttribute() are for choosing
+    an attribute column with the highes information gain indicated through the highes difference
+    in entropy of the unsplitted and splitted data.
+
+    The functions classify() and id3() are for building the tree. Where classify() returns the 
+    current classification of the node and id3() is the ID3 algorithm for training a decision tree.
+
+    The class only takes only a pd.Dataframe as data, string as target and a list of strings 
+    as attributes. 
+    Furthermore if wished the maximal recursion depth of the ID3 algorithm can be set via 
+    max_recursion.
     '''
-    def __init__(self, data, target, attributes, node:Node = None, recursion_depth = 0, continuous_splitting = 0.1,  max_recursion = 10):
+    def __init__(self, data, target, attributes, node:Node = None, recursion_depth = 0, continuous_splitting = 0.1,  max_recursion = np.PINF):
         
         self.data = data
         if not isinstance(self.data, pd.DataFrame):
@@ -36,7 +55,7 @@ class train_data:
     ## methods for continuous variables ##
     ######################################
     
-    def is_continuous(self, values):
+    def isContinuous(self, values):
         # checks is variable is a continuous variable
         # (it is continuous if it has more than 10 different values and is a numericla scalar)
         if len(values) > 10:
@@ -81,7 +100,7 @@ class train_data:
         boundaries.append((leftBound, np.PINF))
         
         # if the getBoundaries function returns more then 10 intervals
-        # set intervals indipendent of classification
+        # set intervals independent of classification
         if len(boundaries) > 10:
             return self.setBoundaries(aColumn)
         
@@ -127,6 +146,16 @@ class train_data:
         
         return pd.Series(newAColumn)
     
+
+    def sortIntervals(self, unsortedV):
+        # sortes the intervals according to their value
+        sortedV = []
+        leftBound = np.NINF
+        for value in unsortedV:
+            if value[0] == leftBound:
+                leftBound = value[1]
+                sortedV.append(value)
+        return sortedV
     
     #######################################
     ## methods for choosing an attribute ##
@@ -134,11 +163,10 @@ class train_data:
     
     
     def entropy(self, targetColumn):
-        # calculates entropy 
-        #targetColumn = self.data.loc[:, self.target]
-
         values = set(targetColumn)
         entropySum = 0
+
+        # Itterates through all values and calculates the sum of the entropies of the values
         for value in values:
             p = list(targetColumn).count(value) / len(targetColumn)
             entropySum = entropySum + (- p * np.log(p))
@@ -164,12 +192,10 @@ class train_data:
     def gainRatio(self, attributeColumn, values):
         # calculating the Gain Ratio instead of the InforamtionGain
         # to prefer attributes with few values
-        
         infoGain = self.informationGain(attributeColumn, values)
-
         splitInfo = 0.0
+
         for value in values:
-            
             subset = attributeColumn[attributeColumn == value]
             # proportion of subset size and whole set size
             s = len(subset) / len(attributeColumn)
@@ -187,19 +213,17 @@ class train_data:
 
     def chooseAttribute(self):
         # chooses an attribute that maximises GainRatio
-        
         maxGain= 0
         maxAttribute = ""
 
         # calculate Gain Ratio for each attribute
         for attribute in self.attributes:
-            
             attributeColumn = self.data[attribute]
             values = set(attributeColumn)
             gain = 0
-            
+
             # replace the values in attributeColumn with continuous values by Intervals
-            if self.is_continuous(values):
+            if self.isContinuous(values):
                 targetColumn = self.data[self.target]
                 boundaries = self.getBoundaries(targetColumn, attributeColumn)
                 attributeColumn = self.replaceContinuous(boundaries, attributeColumn)
@@ -216,17 +240,18 @@ class train_data:
         # choose attribute with highest Information Gain
         return maxAttribute
 
+
     ############################################
     ## methods for building the decision tree ##
     ############################################
     
     def classify(self):
         # returns the most commen classification of the dataset
-        
         targetColumn = self.data.loc[:, self.target]
         values = set(targetColumn)
         maxClass = 0  # highest number of values
         classification = "" # classification of most common value
+
         for value in values:
             # check if calssification value is more common then other classification values
             if list(targetColumn).count(value) > maxClass:
@@ -237,56 +262,66 @@ class train_data:
     
 
     def id3(self):
-        # base cases:
-        # 1) all instances have same target value -> leaf node with target value
+
+        # BASE CASES:
+
+        # 1) all instances have same target value: 
+        #    -> create a leaf node with target value as classification
         if (self.data[self.target].nunique() == 1):
             self.node.setClassification(self.data[self.target].iloc[0])
-            #print("basecase1")-----------------------------------------------------------------
             return 
-        # 2) out of discriptive features -> leaf node with majority of target values
+
+        # 2) out of desciptive features (list of attributes to choose is empty) 
+        #    -> create a leaf node with majority of target values as classification
         if (not self.attributes):
             self.node.setClassification(self.classify())
-            #print("basecase2")-----------------------------------------------------------------
             return
-        # 3) no instances left in dataset -> take majority of parent node
+
+        # 3) no instances left in dataset 
+        #    -> take majority of target values of the parent node as classification
         if (self.data is None):
             parent = self.node.getParent()
             self.node.setClassification(parent.getClassification())
-            #print("basecase3")-----------------------------------------------------------------
             return
-        # 4) maximal recursion depth:
+
+        # 4) when recursion depth is limited and limit is reached:
+        #    -> no further splitting of the data, 
+        #       current node is leaf node with majority of target values as classification
         if self.recursion_depth >= self.max_recursion:
             self.node.setClassification(self.classify())
-            #print("basecase4")-----------------------------------------------------------------
             return
 
 
-        # recursive case:
+        # RECURSIVE CASE:
+
         # choose attribute with highest explainatory power
-        #print("in recursion")-----------------------------------------------------------------
-        #print("attributs: ", self.attributes)-----------------------------------------------------------------
         attribute = self.chooseAttribute()
+
+        # set the attribute and the classification of the current node
         self.node.setAttribute(attribute)
         self.node.setClassification(self.classify())
 
         # split data according to attribute
         attributeColumn = self.data.loc[:, attribute]
         values = set(attributeColumn)
+
+        # make a new list of attributes without the current attribute
         new_attributes = self.attributes
         new_attributes.remove(attribute)
         
+        # add 1 to the recursion_depth
         recursion_depth = self.recursion_depth + 1
 
-        # chosen attribute is a continuous variable:
-        valueIsContinuous=False
-        if self.is_continuous(values):
-            #print("continuous")-----------------------------------------------------------------
-            
+        # when chosen attribute is a continuous variable:
+        # replace the continous values with corresponding boundary tuples
+        valueIsContinuous = False
+        if self.isContinuous(values):
             targetColumn = self.data[self.target]
             boundaries = self.getBoundaries(targetColumn, attributeColumn)
             attributeColumn = self.replaceContinuous(boundaries, attributeColumn)
             values = set(attributeColumn)
-            valueIsContinuous=True
+            values = self.sortIntervals(values)
+            valueIsContinuous = True
 
         
         # create leaf node for each attribute value
@@ -304,10 +339,7 @@ class train_data:
                                 node=childNode, 
                                 recursion_depth=recursion_depth, 
                                 max_recursion = self.max_recursion)
-            subset.id3() # recursive call on all partitions
-            
 
-    def retrain(self, data):
-        self.data = data
-        self.id3()
-    
+            # recursive call on all partitions                    
+            subset.id3() 
+            

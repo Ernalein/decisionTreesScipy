@@ -1,16 +1,17 @@
 import numpy as np
 class Node:
     '''
-    class Node innitialises a tree structure for a non-binary tree
-    it has the typical setter and getter methods and a method to remove a 
-    child from the list of children
+    The class Node has all the getter and setter functions that are necessary for a tree. 
+
+    Furthermore it has additional setter and getter for the attributes, values and classification
+    and a function for printing the tree. It also has a variable to indicate whether or not the 
+    attribute had continous variables.
+
+    The decision tree knows its attributes and the corresponding values in the following way:
+    The parent node knows the attribute according to which the data was split.
+    The children know the values they take according to the attribute of the parent node.
     '''
-    class Node:
-    '''
-    class Node innitialises a tree structure for a non-binary tree
-    it has the typical setter and getter methods and a method to remove a 
-    child from the list of children
-    '''
+    
     def __init__(self, parent = None, attribute = None, classification = None, value = None, valueIsContinuous = False, target = None):
         self.children = []  
         self.parent = parent
@@ -21,6 +22,7 @@ class Node:
         self.target = target
 
     
+    # typical setter and getter for tree structure 
     def setChild(self, node):
         self.children.append(node)
         
@@ -35,13 +37,17 @@ class Node:
     def getParent(self):
         return self.parent
     
+
+    # function to delete a child
     def deleteChild(self, node):
         if (node in self.children):
             node.parent = None
             self.children.remove(node)
         else:
             raise TypeError("Child not in Children")
-        
+    
+
+    # functions to check whether node is a leaf or root node
     def isLeaf(self):
         if len(self.children) > 0:
             return False
@@ -54,6 +60,10 @@ class Node:
         else:
             return False
     
+
+    # -------------------------------------------------------------------------------------------
+    # setter and getter for attributes, values and classification 
+
     def setAttribute(self, attribute):
         self.attribute = attribute
     
@@ -72,7 +82,8 @@ class Node:
     def getValue(self):
         return self.value
     
-
+    #-------------------------------------------------------------------------------------------
+    # function to print the tree
     def printTree(self, level = 0):
         tab = "    "
         if level == 0:
