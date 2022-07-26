@@ -7,71 +7,56 @@ class test_data:
     def __init__(self, testData, target, node:Node):
         self.testData = testData
         self.target = target
-        self.node = node
+        self.rootNode = node
 
         # check whether node is trained:
         if node.getAttribute() is None:
             raise TypeError("node has to be part of a trained Decisiontree")
 
-
-    def calcError(self, datapoint):
-
-        # compare leaf node classification and datapoint classification (basecase)
-        if self.node.isLeaf() == False:
-            return self.node.getClassification() == datapoint[self.target]
-
-        # traverse down the tree with the decision nodes (recursive case)
-        else:
-            attribute = self.node.getAttribute()
-            dataValue = datapoint[attribute]
-            for child in self.node.children:
-                # for interval values
-                if child.valueIsContinuous:
-                    if dataValue >= child.getValue()[0] and dataValue < child.getValue()[1]:
-                        return test_data(datapoint, self.target, child).calcError()
-                # for discrete values
-                if child.getValue() is dataValue:
-                    return test_data(datapoint, self.target, child).calcError()
-        
-        # if there are no children with the right value at decision node, use current classification (base case)
-        return self.node.getClassification() == self.target
-
     
-    def calcClassification(self, datapoint):
+    def classify(self, datapoint, node):
         
         # get leaf node classification (basecase)
-        if self.node.isLeaf() == False:
-            return self.node.getClassification()
+        if node.isLeaf() == True:
+            return node.getClassification()
 
         # traverse down the tree with the decision nodes (recursive case)
         else:
-            attribute = self.node.getAttribute()
-            dataValue = datapoint[attribute]
-            for child in self.node.children:
+            attribute = node.getAttribute()
+            dataValue = datapoint.loc[attribute]
+            for child in node.getChildren():
+                cValue = child.getValue()
                 # for interval values
                 if child.valueIsContinuous:
-                    if dataValue >= child.getValue()[0] and dataValue < child.getValue()[1]:
-                        return test_data(datapoint, self.target, child).calcClassification()
+                    if dataValue >= cValue[0] and dataValue < cValue[1]:
+                        return self.classify(datapoint, child)
                 # for discrete values
-                if child.getValue() is dataValue:
-                    return test_data(datapoint, self.target, child).calcClassification()
+                elif cValue is dataValue:
+                    return self.classify(datapoint, child)
         
         # if there are no children with the right value at decision node, get current classification (base case)
-        return self.node.getClassification()
+        return node.getClassification()
         
-    def classify(self):
-        classificationArray = []
-        for i in range(self.testData.shape[0]):
-            datapoint = self.testData.loc[i]
-            classificationArray.append(self.calcClassification(datapoint))
-        
-        return classificationArray
+    def classifySet(self):
+        classes = []
+        #print("testData: ", self.testData)
+        for i in range(len(self.testData)):
+            datapoint = self.testData.iloc[i]
+            #print("datapoint: ", datapoint)
+            classes.append(self.classify(datapoint, self.rootNode))
+        return classes
     
     def accuracy(self):
-        errorArray = []
-        for i in range(self.testData.shape[0]):
-            datapoint = self.testData.loc[i]
-            errorArray.append(self.calcError(datapoint))
+        classes = self.classifySet()
+        targets = self.testData[self.target]
         
-        return np.mean(errorArray)
+        errors = []
+        for target, classification in zip(targets, classes):
+            #print("target: ", target , " class: ", classification)
+            if target == classification:
+                errors.append(True)
+            else:
+                errors.append(False)
+                
+        return np.mean(errors)
 

@@ -5,17 +5,22 @@ class Node:
     it has the typical setter and getter methods and a method to remove a 
     child from the list of children
     '''
-    def __init__(self, root = False, parent = None, children = [], attribute = None, classification = None, value = None, valueIsContinuous = False, target = None):
-        self.children = children  
+    class Node:
+    '''
+    class Node innitialises a tree structure for a non-binary tree
+    it has the typical setter and getter methods and a method to remove a 
+    child from the list of children
+    '''
+    def __init__(self, parent = None, attribute = None, classification = None, value = None, valueIsContinuous = False, target = None):
+        self.children = []  
         self.parent = parent
         self.attribute = attribute
         self.classification = classification
         self.value = value
         self.valueIsContinuous = valueIsContinuous
         self.target = target
-        self.root = root
-        
 
+    
     def setChild(self, node):
         self.children.append(node)
         
@@ -38,13 +43,13 @@ class Node:
             raise TypeError("Child not in Children")
         
     def isLeaf(self):
-        if len(self.children) > 0 and not self.root:
+        if len(self.children) > 0:
             return False
         else:
             return True
 
     def isRoot(self):
-        if self.root:
+        if (self.parent is None):
             return True
         else:
             return False
@@ -70,14 +75,15 @@ class Node:
 
     def printTree(self, level = 0):
         tab = "    "
+        if level == 0:
+            print("Decision tree:")
         if self.isLeaf():
             print(tab*level, "classification: ", self.target, " = " , self.classification)
         else:
             for child in self.children:
-                
                 # printing intervals
                 if child.valueIsContinuous:
-                    interval = ""
+                    interval = "" 
                     if child.value[0] == np.NINF:
                         interval = f"smaller then {child.value[1]}"
                     elif child.value[1] == np.PINF:

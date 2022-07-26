@@ -9,7 +9,7 @@ class train_data:
     within the ID3 algorithm a tree will be trained.
     the function retrain(data) retrains a trained tree with new data.
     '''
-    def __init__(self, data, target, attributes, node:Node = None, recursion_depth = None, continuous_splitting = 0.1,  max_recursion = 10):
+    def __init__(self, data, target, attributes, node:Node = None, recursion_depth = 0, continuous_splitting = 0.1,  max_recursion = 10):
         
         self.data = data
         if not isinstance(self.data, pd.DataFrame):
@@ -40,7 +40,7 @@ class train_data:
         # checks is variable is a continuous variable
         # (it is continuous if it has more than 10 different values and is a numericla scalar)
         if len(values) > 10:
-            if isinstance(list(values)[5], int) or isinstance(list(values)[5], float):
+            if isinstance(list(values)[5], int) or isinstance(list(values)[0], float):
                 return True
         return False
 
@@ -115,10 +115,17 @@ class train_data:
         
         newAColumn = []
         for value in aColumn:
+            # find the interval that includes the value
+            foundInterval = False
             for l, r in boundaries:
                 if value >= l and value < r:
                     newAColumn.append((l, r))
-        return newAColumn
+                    foundInterval = True
+                    break
+            if foundInterval == False:
+                raise TypeError("could not find and interval for ", value)
+        
+        return pd.Series(newAColumn)
     
     
     #######################################
@@ -126,9 +133,9 @@ class train_data:
     #######################################
     
     
-    def entropy(self):
+    def entropy(self, targetColumn):
         # calculates entropy 
-        targetColumn = self.data.loc[:, self.target]
+        #targetColumn = self.data.loc[:, self.target]
 
         values = set(targetColumn)
         entropySum = 0
@@ -141,18 +148,16 @@ class train_data:
 
     def informationGain(self, attributeColumn, values):
         # calculates the informationGain
-        
         gainSum = 0
         for value in values:
-            
             mask = lambda aColumn, value :(row == value for row in aColumn) 
             subsetData = self.data.iloc[mask(attributeColumn, value),:]
-            subset = train_data(subsetData, self.target, self.attributes)
+            subsetTargetColumn = subsetData[self.target]
             # claculate entropy and normalize by size of subsets
-            gainSum = gainSum + (subsetData.shape[0] / self.data.shape[0]) * subset.entropy()
+            gainSum = gainSum + (len(subsetData)/ len(self.data)) * self.entropy(subsetTargetColumn)
 
-        # substract summed and weighted entropy of subsets from entropy of whole set    
-        infoGain = self.entropy() - gainSum
+        # substract summed and weighted entropy of subsets from entropy of whole set
+        infoGain = self.entropy(self.data.loc[:, self.target]) - gainSum
 
         return infoGain
 
@@ -182,17 +187,17 @@ class train_data:
 
     def chooseAttribute(self):
         # chooses an attribute that maximises GainRatio
-        #   
+        
         maxGain= 0
         maxAttribute = ""
 
         # calculate Gain Ratio for each attribute
         for attribute in self.attributes:
             
-            attributeColumn = self.data.loc[:, attribute]
+            attributeColumn = self.data[attribute]
             values = set(attributeColumn)
             gain = 0
-
+            
             # replace the values in attributeColumn with continuous values by Intervals
             if self.is_continuous(values):
                 targetColumn = self.data[self.target]
@@ -229,38 +234,37 @@ class train_data:
                 classification = value
 
         return classification
+    
 
     def id3(self):
         # base cases:
         # 1) all instances have same target value -> leaf node with target value
         if (self.data[self.target].nunique() == 1):
             self.node.setClassification(self.data[self.target].iloc[0])
-            print("basecase1")
-            print("classification: ", self.data[self.target].iloc[0])
+            #print("basecase1")-----------------------------------------------------------------
             return 
         # 2) out of discriptive features -> leaf node with majority of target values
         if (not self.attributes):
             self.node.setClassification(self.classify())
-            print("basecase2")
-            print("classification: ", self.classify())
+            #print("basecase2")-----------------------------------------------------------------
             return
         # 3) no instances left in dataset -> take majority of parent node
         if (self.data is None):
             parent = self.node.getParent()
             self.node.setClassification(parent.getClassification())
-            print("basecase3")
+            #print("basecase3")-----------------------------------------------------------------
             return
         # 4) maximal recursion depth:
-        if self.recursion_depth == self.max_recursion:
+        if self.recursion_depth >= self.max_recursion:
             self.node.setClassification(self.classify())
-            print("basecase4")
+            #print("basecase4")-----------------------------------------------------------------
             return
 
 
         # recursive case:
         # choose attribute with highest explainatory power
-        print("in recursion")
-        print("attributs: ", self.attributes)
+        #print("in recursion")-----------------------------------------------------------------
+        #print("attributs: ", self.attributes)-----------------------------------------------------------------
         attribute = self.chooseAttribute()
         self.node.setAttribute(attribute)
         self.node.setClassification(self.classify())
@@ -270,19 +274,20 @@ class train_data:
         values = set(attributeColumn)
         new_attributes = self.attributes
         new_attributes.remove(attribute)
+        
         recursion_depth = self.recursion_depth + 1
 
-        valueIsContinuous=False
-        
         # chosen attribute is a continuous variable:
+        valueIsContinuous=False
         if self.is_continuous(values):
-            print("continuous")
+            #print("continuous")-----------------------------------------------------------------
             
             targetColumn = self.data[self.target]
             boundaries = self.getBoundaries(targetColumn, attributeColumn)
             attributeColumn = self.replaceContinuous(boundaries, attributeColumn)
             values = set(attributeColumn)
             valueIsContinuous=True
+
         
         # create leaf node for each attribute value
         for value in values:
@@ -293,7 +298,12 @@ class train_data:
             childNode = Node(parent=self.node, value=value, valueIsContinuous=valueIsContinuous, target=self.target)
             self.node.setChild(childNode)
             # train the node with the data subset
-            subset = train_data(data=subsetData, target=self.target, attributes=new_attributes, node=childNode, recursion_depth=recursion_depth)
+            subset = train_data(data=subsetData, 
+                                target=self.target, 
+                                attributes=new_attributes, 
+                                node=childNode, 
+                                recursion_depth=recursion_depth, 
+                                max_recursion = self.max_recursion)
             subset.id3() # recursive call on all partitions
             
 

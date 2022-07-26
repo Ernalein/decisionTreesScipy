@@ -3,6 +3,13 @@ import pandas as pd
 # get chunks for training and testing
 
 def prepare_data(data:pd.DataFrame, tratio = 0.1):
+    
+    # remove any Nans from Dataframe
+    data = data.dropna(how='any')
+    
+    # shuffle data
+    data = data.sample(frac=1).reset_index(drop=True)
+    
     # variables to return
     testData = []
     trainingData = []
@@ -21,9 +28,7 @@ def prepare_data(data:pd.DataFrame, tratio = 0.1):
     # append data set to existing dataset
     doubleData = data.append(data)
 
-    # itterate through doubleData, assigh a certain chunk to testing, training and if wished 
-    # validation
-
+    # itterate through doubleData, assigh a certain chunk to testing and training
     for chunk in range(nr_chunks-1):
         testData.append(doubleData.iloc[chunk: chunkSize*(chunk+1), :])
         trainingData.append(doubleData.iloc[chunkSize*(chunk+1): chunkSize*(nr_chunks+chunk), :])

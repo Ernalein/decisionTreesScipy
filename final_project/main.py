@@ -1,48 +1,88 @@
 import pandas as pd
+import seaborn as sns
 from tree import Node
 from train_data import train_data
 from prepare_data import prepare_data
 from test_data import test_data
 # this is the main
 
-# 1. load data
-d= {"gender": ["f", "f", "f", "f", "f", "m", "m", "m", "m", "m", "f", "f", "f", "f", "m", "f", "m", "m", "m", "m"],
-    "vegan": [True, True, True, False, False, True, False, False, False, False, True, True, True, False, False, True, False, True, False, True],
-    "coxi": [True, True, True, False, True, True, True, False, False, False, True, False, False, True, False, False, True, True, True, False],
-    "green": [True, True, True, False, False, True, False, True, False, True, True, True, True, False, True, True, True, False, False, False],
-    "party_lover": [True, False, False, True, False, False, True, True, True, False, True, True, True, False, True, True, True, False, False, False],
-    "abschluss": ["Bachelor", "Bachelor", "Master", "Keiner", "Keiner", "Master", "Master", "PhD", "Keiner", "PhD", "Master", "Master", "PhD", "Keiner", "PhD", "Bachelor", "Master", "Keiner", "Keiner", "Master"]}
 
-data = pd.DataFrame(data = d)
 
+
+# datasets from seaborn:
+# ['anagrams', 'anscombe', 'attention', 'brain_networks', 'car_crashes',
+#'diamonds', 'dots', 'exercise', 'flights', 'fmri', 'gammas', 'geyser',
+#'iris', 'mpg', 'penguins', 'planets', 'taxis', 'tips', 'titanic']
+
+# check out available dataset form seaborn:
+data = sns.load_dataset("titanic")
+data = data.dropna(how = "any")
+print(data.columns)
+print(data)
+
+
+
+
+
+### build some penguin trees:
+
+data = sns.load_dataset("penguins")
 
 # 2. prepare data
-prepared_data = prepare_data(data)
+data = prepare_data(data)
 
+# 3. choose the target value
+target = "island"
 
-
-# choose the target value 
-target = "vegan"
-attributes = list(data.columns)
-attributes.remove(target)
-error = []
-# 3. split_data with id3
-for chunk in range(10):
-    testing_data = prepared_data[chunk][0]
-    training_data = prepared_data[chunk][1]
-    rootNode = Node(root=True, children=[])
-    decisionTree = train_data(data=training_data, target=target, attributes=attributes, node=rootNode, recursion_depth=0)
+# 4. train a tree for each chunk of the training set
+decisionTrees = []
+for trainingSet in data[0]:
+    
+    attributes = list(trainingSet.columns)
+    attributes.remove(target)
+    
+    rootNode = Node()
+    decisionTree = train_data(data=trainingSet, target=target, attributes=attributes, node=rootNode, max_recursion = 10)
     decisionTree.id3()
-
-    print('')
-    print("Tree ", chunk)
-    print('')
-
+    decisionTrees.append(rootNode)
     rootNode.printTree()
 
-    # calculate error of test set:
-    test_error = test_data(testing_data, target, rootNode).accuracy()
-    print("appendet error: ", test_error)
-    error.append(test_error) 
+for testingSet, tree in zip(data[1], decisionTrees):
+    
+    testData = test_data(testingSet, target, tree)
+    print(testData.accuracy())
 
-    print("--------------------------------------------------------")
+    
+    
+    
+### build some titanic trees
+
+data = sns.load_dataset("titanic")
+data = data.drop("alive", axis=1)
+
+# 2. prepare data
+data = prepare_data(data)
+
+# 3. choose the target value
+target = "survived"
+
+# 4. train a tree for each chunk of the training set
+decisionTrees = []
+for trainingSet in data[0]:
+    
+    attributes = list(trainingSet.columns)
+    attributes.remove(target)
+    
+    rootNode = Node()
+    decisionTree = train_data(data=trainingSet, target=target, attributes=attributes, node=rootNode, max_recursion = 10)
+    decisionTree.id3()
+    decisionTrees.append(rootNode)
+    rootNode.printTree()
+
+for testingSet, tree in zip(data[1], decisionTrees):
+    
+    testData = test_data(testingSet, target, tree)
+    print(testData.accuracy())
+    
+    
+    
