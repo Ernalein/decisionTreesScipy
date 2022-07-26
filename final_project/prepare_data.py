@@ -2,6 +2,7 @@ import pandas as pd
 
 def prepare_data(data:pd.DataFrame, tratio = 0.1):
     
+    
     # remove any Nans from Dataframe
     data = data.dropna(how='any')
     

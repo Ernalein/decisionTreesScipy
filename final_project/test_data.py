@@ -14,7 +14,7 @@ class test_data:
     The calculated error lies inbetween 0 and 1 where 1 indicates a fully right classification 
     of the testing set and 0 indicaties a fully wrong classification.
 
-    The class only takes a trained decisiontree for testing 
+    The class only takes the root node of a trained decisiontree for testing 
     and the test data has to be a pd.Dataframe.
     '''
     

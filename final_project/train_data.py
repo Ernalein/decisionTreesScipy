@@ -7,23 +7,25 @@ class train_data:
     The class train_data has all important functions for the ID3 Algorithm with continous 
     and discrete variables:
 
-    The functions isContinous(), getBoundaries(), setBoundaries() and replaceContinous()
-    detect when an attribute column consists of continous values. The markers we choose for this
-    detection are more than 10 different numerical values. 
-    They choose the boundary tuples according to the classification. When this returns more than 
-    10 differnet values they set 10 evenly spread boundaries.
+    The functions isContinous(), getBoundaries(), setBoundaries() and replaceContinous() are 
+    responsible for handeling continuous variables:
+    isContinous() detects when an attribute column consists of continuous values which is 
+    the case if there are more than 10 different numerical values. 
+    getBoundaries() chooses the boundary tuples representing intervals according to the classifications. 
+    When this returns more than 10 different intervals setBoundaries() sets 10 evenly sized 
+    intervals independent of classification instead.
     With replaceContinous() the values is the continous attribute column are then replaced with 
     the boundary tuple in which they lie inbetween. 
     The fuction sortIntervals() sorts the resulting intervals.
 
     The functions entropy(), informationGain(), gainRatio() and chooseAttribute() are for choosing
-    an attribute column with the highes information gain indicated through the highes difference
-    in entropy of the unsplitted and splitted data.
+    an attribute column with the highest gain Ratio. Gain Ratio is choosen instead of Information Gain,
+    so that for many valued attributes those with few values are prefered.
 
     The functions classify() and id3() are for building the tree. Where classify() returns the 
     current classification of the node and id3() is the ID3 algorithm for training a decision tree.
 
-    The class only takes only a pd.Dataframe as data, string as target and a list of strings 
+    The class only takes a pd.Dataframe as data, string as target and a list of strings 
     as attributes. 
     Furthermore if wished the maximal recursion depth of the ID3 algorithm can be set via 
     max_recursion.
