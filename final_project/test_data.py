@@ -49,7 +49,7 @@ class test_data:
             
             # for interval values
             if child.valueIsContinuous:
-                # check whether datapoint lies inbetween the bordervalues
+                # check whether datapoint lies inbetween the boundaries
                 if dataValue >= cValue[0] and dataValue < cValue[1]:
                     return self.classify(datapoint, child)
             # for discrete values
@@ -76,7 +76,7 @@ class test_data:
         targets = self.testData[self.target]
         
         errors = []
-        # itterates through tagests and classes
+        # itterates through targets and classes
         # checks whether the classification of the decisiontree was right or not
         for target, classification in zip(targets, classes):
             if target == classification:

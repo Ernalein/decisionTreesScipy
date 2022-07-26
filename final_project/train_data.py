@@ -93,12 +93,12 @@ class train_data:
                 afterSwitch = columns["a"][i]
                 rightBound = (beforeSwitch + afterSwitch) / 2
 
-                # safe the tupple of two boundaries 
+                # safe the tupple of two boundaries, 
                 # represents an interval with a uniform classification
                 boundaries.append((leftBound, rightBound))
                 leftBound = rightBound
         
-        # last interval has negative infinity as right boundary
+        # last interval has positive infinity as right boundary
         boundaries.append((leftBound, np.PINF))
         
         # if the getBoundaries function returns more then 10 intervals
@@ -195,8 +195,8 @@ class train_data:
         # calculating the Gain Ratio instead of the InforamtionGain
         # to prefer attributes with few values
         infoGain = self.informationGain(attributeColumn, values)
+        
         splitInfo = 0.0
-
         for value in values:
             subset = attributeColumn[attributeColumn == value]
             # proportion of subset size and whole set size
@@ -224,7 +224,7 @@ class train_data:
             values = set(attributeColumn)
             gain = 0
 
-            # replace the values in attributeColumn with continuous values by Intervals
+            # replace the continuous values in attributeColumn by Intervals
             if self.isContinuous(values):
                 targetColumn = self.data[self.target]
                 boundaries = self.getBoundaries(targetColumn, attributeColumn)
