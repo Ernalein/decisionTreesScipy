@@ -1,10 +1,10 @@
 import numpy as np
 import pandas as pd
-from tree import Node
+from Node import Node
 
-class train_data:
+class Train_data:
     '''
-    The class train_data has all important functions for the ID3 Algorithm with continous 
+    The class Train_data has all important functions for the ID3 Algorithm with continous 
     and discrete variables:
 
     The functions isContinous(), getBoundaries(), setBoundaries() and replaceContinous() are 
@@ -335,7 +335,7 @@ class train_data:
             childNode = Node(parent=self.node, value=value, valueIsContinuous=valueIsContinuous, target=self.target)
             self.node.setChild(childNode)
             # train the node with the data subset
-            subset = train_data(data=subsetData, 
+            subset = Train_data(data=subsetData, 
                                 target=self.target, 
                                 attributes=new_attributes, 
                                 node=childNode, 

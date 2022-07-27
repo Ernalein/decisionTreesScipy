@@ -2,12 +2,11 @@ import pandas as pd
 
 def prepare_data(data:pd.DataFrame, tratio = 0.1):
     
-    
     # remove any Nans from Dataframe
     data = data.dropna(how='any')
     
     # shuffle data
-    data = data.sample(frac=1).reset_index(drop=True)
+    data = data.sample(frac=1, random_state=1).reset_index(drop=True)
     
     # variables to return
     testData = []

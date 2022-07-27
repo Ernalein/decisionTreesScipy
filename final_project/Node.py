@@ -1,4 +1,5 @@
 import numpy as np
+
 class Node:
     '''
     The class Node has all the getter and setter functions that are necessary for a tree. 
@@ -36,15 +37,6 @@ class Node:
     
     def getParent(self):
         return self.parent
-    
-
-    # function to delete a child
-    def deleteChild(self, node):
-        if (node in self.children):
-            node.parent = None
-            self.children.remove(node)
-        else:
-            raise TypeError("Child not in Children")
     
 
     # functions to check whether node is a leaf or root node

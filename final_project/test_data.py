@@ -1,8 +1,8 @@
 import pandas as pd
 import numpy as np
-from tree import Node
+from Node import Node
 
-class test_data:
+class Test_data:
 
     '''
     The class test_data tests the accuracy of a decisiontree with the testing set of the data.
