@@ -47,7 +47,7 @@ for dataset,target in seabornToyData:
     print("accuracy score: ", maxAcc)
     print(bestTree.printTree())
     
-    # 6. build a decision Forest with same training set size for each tree
+    # 6. build a decision Forest
     forest = Random_forest(data, target, trainRatio = 0.1, nrTrees = 15, testRatio = 0.1)
     forest.train()
     fAcc = forest.accuracy()
