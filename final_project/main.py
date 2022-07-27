@@ -1,5 +1,6 @@
 import pandas as pd
 import seaborn as sns
+import numpy as np
 from Node import Node
 from Train_data import Train_data
 from prepare_data import prepare_data
@@ -57,5 +58,7 @@ for dataset,target in seabornToyData:
         print("The random forest performs better then the best decision Tree")
     elif fAcc < maxAcc:
         print("The random forest performs worse then the best decision Tree")
+    else:
+        print("The random forest performs equal to the best decision Tree")
 
         

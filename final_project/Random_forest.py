@@ -43,10 +43,10 @@ class Random_forest:
         for trainingSet in trainingSets:
 
             attributes = list(trainingSet.columns)
-            attributes.remove(target)
+            attributes.remove(self.target)
 
             rootNode = Node()
-            decisionTree = Train_data(data=trainingSet, target=target, attributes=attributes, node=rootNode, max_recursion = np.PINF)
+            decisionTree = Train_data(data=trainingSet, target=self.target, attributes=attributes, node=rootNode, max_recursion = np.PINF)
             decisionTree.id3()
             self.trees.append(rootNode)
         
