@@ -28,7 +28,7 @@ def prepare_data(data:pd.DataFrame, tratio = 0.1):
 
     # itterate through doubleData, assigh a certain chunk to testing and training
     for chunk in range(nr_chunks-1):
-        testData.append(doubleData.iloc[chunk: chunkSize*(chunk+1), :])
+        testData.append(doubleData.iloc[chunkSize*chunk: chunkSize*(chunk+1), :])
         trainingData.append(doubleData.iloc[chunkSize*(chunk+1): chunkSize*(nr_chunks+chunk), :])
     
     return [testData, trainingData]
