@@ -21,8 +21,10 @@ The function implements K-folds crossvalidation. So it splits the data into k ch
 10 different training and testing splits, each time the test set is a different one of the k chunks, the rest is the training set.
 
 Lastly we also implemented a random forest with the Random_forest class. After training it can be used to classify data and can be tested on accuracy.
-A rondom forest holds a collection of trees trained on different subsets of the training set. Datapoints are then classified by each tree and the most common classification will be the classification returned by the random forest. Our random forest implemented only the "bag of trees" approach, such that each tree is trained on a different data subset. We did not additionally implement the "bag of features" approach.
+A random forest holds a collection of trees trained on different subsets of the training set. Datapoints are then classified by each tree and the most common classification will be the classification returned by the random forest. Our random forest implemented only the "bag of trees" approach, such that each tree is trained on a different data subset. We did not additionally implement the "bag of features" approach.
 
 The main method builds 10 different decision trees for 4 different datasets (using 10-fold cross validation). 
 From the 10 trees the tree with the highest accuracy is then printed.
-Aldo a random forest is implemented for each training set. The accuracy of the best decision tree is compared to the accuracy of the random forest.
+Also a random forest is implemented for each training set. The accuracy of the best decision tree is compared to the accuracy of the random forest.
+
+The code is additionally collected in the jupyter notebook file collection.ipynb.  
